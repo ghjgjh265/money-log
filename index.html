@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>记账本</title>
+<style>
+:root{
+  --pri:#6366f1;--pri2:#4f46e5;--bg:#f0f2f5;--card:#fff;
+  --red:#ef4444;--green:#22c55e;--txt:#1e293b;--sub:#94a3b8;
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+  background:var(--bg);color:var(--txt);font-size:15px;overflow-x:hidden}
+
+/* ===== 顶栏 ===== */
+.top{
+  background:linear-gradient(135deg,var(--pri),var(--pri2));
+  color:#fff;padding:24px 20px 20px;border-radius:0 0 28px 28px;
+  position:relative;overflow:hidden;
+}
+.top::after{content:'';position:absolute;width:180px;height:180px;
+  background:rgba(255,255,255,.08);border-radius:50%;top:-60px;right:-40px}
+.top .greet{font-size:13px;opacity:.8;margin-bottom:4px}
+.top .big{font-size:36px;font-weight:800;letter-spacing:-1px}
+.top .sub{font-size:12px;opacity:.7;margin-top:6px;display:flex;gap:16px}
+.top .sub span{opacity:1}
+
+/* ===== 日期切换 ===== */
+.datebar{display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 0 6px}
+.datebar button{width:32px;height:32px;border-radius:50%;border:1.5px solid #d1d5db;
+  background:#fff;font-size:14px;color:#666;cursor:pointer;display:grid;place-items:center}
+.datebar button:active{background:#e5e7eb}
+.datebar .label{font-weight:600;font-size:15px;min-width:120px;text-align:center}
+.datebar .today-btn{border:none;background:var(--pri);color:#fff;border-radius:8px;
+  width:auto;height:auto;padding:4px 10px;font-size:12px;font-weight:600}
+
+/* ===== 列表 ===== */
+.section{padding:10px 16px 100px}
+.group-date{font-size:12px;color:var(--sub);margin:14px 0 6px 4px;font-weight:600}
+.row{
+  background:var(--card);border-radius:var(--radius);padding:16px;
+  margin-bottom:8px;display:flex;align-items:center;gap:14px;
+  box-shadow:0 1px 4px rgba(0,0,0,.03);position:relative;overflow:hidden;
+}
+.row .icon{
+  width:40px;height:40px;border-radius:12px;background:#f1f5f9;
+  display:grid;place-items:center;font-size:18px;flex-shrink:0;
+}
+.row .info{flex:1;min-width:0}
+.row .info .note{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .info .time{font-size:11px;color:var(--sub);margin-top:2px}
+.row .amt{font-size:17px;font-weight:700;color:var(--red);white-space:nowrap}
+.row .del-btn{
+  position:absolute;right:-60px;top:0;bottom:0;width:60px;
+  background:var(--red);color:#fff;border:none;font-size:13px;
+  font-weight:600;cursor:pointer;transition:right .2s;
+}
+.row.swiped .del-btn{right:0}
+
+.empty{text-align:center;color:#c0c4cc;padding:50px 0;font-size:14px}
+.empty i{font-size:48px;display:block;margin-bottom:10px;font-style:normal}
+
+/* ===== 底部输入 ===== */
+.bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--card);border-top:1px solid #e5e7eb;
+  padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));
+}
+.bar form{display:flex;gap:8px;align-items:center}
+.bar .f-amt{
+  width:100px;height:44px;border:2px solid #e2e8f0;border-radius:12px;
+  padding:0 10px;font-size:17px;font-weight:700;text-align:center;
+  outline:none;transition:border .2s;background:#f8fafc;
+}
+.bar .f-note{
+  flex:1;height:44px;border:2px solid #e2e8f0;border-radius:12px;
+  padding:0 12px;font-size:14px;outline:none;transition:border .2s;background:#f8fafc;
+}
+.bar input:focus{border-color:var(--pri)}
+.bar .f-btn{
+  height:44px;padding:0 16px;border:none;border-radius:12px;
+  background:var(--pri);color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;white-space:nowrap;transition:background .15s;
+}
+.bar .f-btn:active{background:var(--pri2)}
+/* ===== 桌面端适配 ===== */
+.wrap{max-width:480px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.06)}
+
+/* 桌面端底部栏跟随居中 */
+.bar{max-width:480px;left:50%;transform:translateX(-50%)}
+
+/* PC端删除按钮常驻显示 */
+@media(hover:hover){
+  .row .del-btn{right:0;opacity:0;transition:opacity .15s}
+  .row:hover .del-btn{opacity:1}
+}
+
+/* 大屏增强 */
+@media(min-width:768px){
+  .top{padding:32px 28px 28px}
+  .top .big{font-size:42px}
+  .section{padding:14px 24px 100px}
+  .row{padding:18px 20px;gap:16px}
+  .row .icon{width:44px;height:44px;font-size:20px}
+  .row .info .note{font-size:15px}
+  .row .amt{font-size:18px}
+  .bar{padding:12px 24px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+  .bar .f-amt{width:120px;height:48px;font-size:18px}
+  .bar .f-note{height:48px;font-size:15px}
+  .bar .f-btn{height:48px;padding:0 22px;font-size:16px}
+}
+
+@media(min-width:1200px){
+  body{font-size:16px}
+  .wrap{max-width:520px;border-radius:0}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- 顶栏 -->
+<div class="top">
+  <div class="greet" id="greet"></div>
+  <div class="big" id="dayTotal">¥0.00</div>
+  <div class="sub">
+    <span>本月 <b id="monthTotal">¥0.00</b></span>
+    <span>共 <b id="count">0</b> 笔</span>
+  </div>
+</div>
+
+<!-- 日期 -->
+<div class="datebar">
+  <button onclick="shift(-1)">‹</button>
+  <span class="label" id="dateLabel"></span>
+  <button onclick="shift(1)">›</button>
+  <button class="today-btn" onclick="goToday()">今天</button>
+</div>
+
+<!-- 列表 -->
+<div class="section" id="list"></div>
+
+<!-- 输入栏 -->
+
+</div><!-- .wrap -->
+<div class="bar">
+  <form onsubmit="return add(event)">
+    <input class="f-amt" id="inAmt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="¥">
+    <input class="f-note" id="inNote" type="text" placeholder="花在哪了…" maxlength="40">
+    <button class="f-btn" type="submit">记一笔</button>
+  </form>
+</div>
+
+<script>
+/* ---- 数据 ---- */
+const STORE_KEY = 'my_expense_2026';
+const load = () => JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+const save = d => localStorage.setItem(STORE_KEY, JSON.stringify(d));
+
+let cur = today();
+
+function today(){
+  const d=new Date();
+  return d.getFullYear()+'-'+S(d.getMonth()+1)+'-'+S(d.getDate());
+}
+function S(n){return String(n).padStart(2,'0')}
+
+function fmtDate(s){
+  const [y,m,d]=s.split('-');
+  return `${m}月${parseInt(d)}日`;
+}
+function weekday(s){
+  return ['周日','周一','周二','周三','周四','周五','周六'][new Date(s+'T00:00').getDay()];
+}
+
+/* ---- 图标映射 ---- */
+const icons = {
+  '吃':'🍜','喝':'🧋','饭':'🍚','餐':'🍽️','早':'🥐','午':'🍱','晚':'🌙',
+  '买':'🛒','购':'🛍️','衣':'👕','鞋':'👟','住':'🏠','租':'🏢',
+  '车':'🚗','油':'⛽','打车':'🚕','公交':'🚌','地铁':'🚇',
+  '玩':'🎮','电影':'🎬','唱':'🎤','旅游':'✈️',
+  '医':'💊','药':'💊','学':'📚','书':'📖','话费':'📱','网':'📶',
+  '礼':'🎁','红包':'🧧','咖啡':'☕','奶茶':'🧋','烟':'🚬','酒':'🍺',
+};
+function pickIcon(note){
+  for(const k in icons) if(note.includes(k)) return icons[k];
+  return '💸';
+}
+
+/* ---- 操作 ---- */
+function add(e){
+  e.preventDefault();
+  const el=document.getElementById('inAmt'), nl=document.getElementById('inNote');
+  const v=parseFloat(el.value);
+  if(!v||v<=0){el.focus();return false}
+  const note=nl.value.trim()||'未备注';
+  const data=load();
+  if(!data[cur]) data[cur]=[];
+  data[cur].push({
+    id:Date.now(),
+    amount:Math.round(v*100)/100,
+    note,
+    time:new Date().toTimeString().slice(0,5)
+  });
+  save(data);
+  el.value='';nl.value='';el.focus();
+  render();
+  return false;
+}
+
+function del(id){
+  const data=load();
+  if(!data[cur]) return;
+  data[cur]=data[cur].filter(r=>r.id!==id);
+  if(!data[cur].length) delete data[cur];
+  save(data);render();
+}
+
+function shift(n){
+  const d=new Date(cur+'T00:00');
+  d.setDate(d.getDate()+n);
+  cur=d.getFullYear()+'-'+S(d.getMonth()+1)+'-'+S(d.getDate());
+  render();
+}
+function goToday(){cur=today();render()}
+
+/* ---- 渲染 ---- */
+function render(){
+  const data=load(), recs=data[cur]||[];
+
+  // 顶部
+  const daySum=recs.reduce((s,r)=>s+r.amount,0);
+  document.getElementById('dayTotal').textContent='¥'+daySum.toFixed(2);
+  const mp=cur.slice(0,7);
+  let ms=0,mc=0;
+  for(const[k,v]of Object.entries(data))if(k.startsWith(mp)){
+    ms+=v.reduce((s,r)=>s+r.amount,0);mc+=v.length;
+  }
+  document.getElementById('monthTotal').textContent='¥'+ms.toFixed(2);
+  document.getElementById('count').textContent=mc;
+
+  // 问候
+  const h=new Date().getHours();
+  const greet=h<6?'夜深了':h<12?'早上好':h<18?'下午好':'晚上好';
+  document.getElementById('greet').textContent=greet+'，今天花了多少？';
+
+  // 日期
+  const isToday=cur===today();
+  document.getElementById('dateLabel').textContent=
+    fmtDate(cur)+' '+weekday(cur)+(isToday?' (今天)':'');
+
+  // 列表
+  const el=document.getElementById('list');
+  if(!recs.length){
+    el.innerHTML='<div class="empty"><i>📝</i>今天还没有消费<br>点击下方开始记账</div>';
+    return;
+  }
+  const sorted=[...recs].reverse();
+  el.innerHTML=sorted.map(r=>`
+    <div class="row" onclick="this.classList.toggle('swiped')">
+      <div class="icon">${pickIcon(r.note)}</div>
+      <div class="info">
+        <div class="note">${esc(r.note)}</div>
+        <div class="time">${r.time}</div>
+      </div>
+      <div class="amt">-¥${r.amount.toFixed(2)}</div>
+      <button class="del-btn" onclick="event.stopPropagation();del(${r.id})">删除</button>
+    </div>`).join('');
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+render();
+</script>
+</body>
+</html>
